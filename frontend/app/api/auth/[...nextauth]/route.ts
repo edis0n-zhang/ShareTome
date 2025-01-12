@@ -50,6 +50,17 @@ const handler = NextAuth({
       }
       return session
     },
+    async signIn({ user, account, profile, email, credentials }) {
+      console.log('SignIn attempt:', { user, account, profile, email });
+      return true;
+    },
+    async redirect({ url, baseUrl }) {
+      console.log('Redirect:', { url, baseUrl });
+      return url.startsWith(baseUrl) ? url : baseUrl;
+    },
+    async error({ error, options }) {
+      console.error('Authentication Error:', error)
+    }
   },
 })
 
