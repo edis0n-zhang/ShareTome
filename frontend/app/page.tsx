@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "../components/ui/button";
 import { Header } from "../components/header";
+import { api } from "../lib/api";
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -21,8 +22,7 @@ export default function Home() {
   useEffect(() => {
     const fetchElasticData = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/es/all`);
-        const data = await response.json();
+        const data = await api.getAllDocuments();
         setElasticData(data);
       } catch (error) {
         console.error("Error fetching Elasticsearch data:", error);

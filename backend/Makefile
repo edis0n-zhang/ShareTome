@@ -23,7 +23,7 @@ docker-run:
 
 # Shutdown DB container
 docker-down:
-	@if docker compose down 2>/dev/null; then \
+	@if podman compose down 2>/dev/null; then \
 		: ; \
 	else \
 		echo "Falling back to Docker Compose V1"; \
