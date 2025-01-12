@@ -11,7 +11,11 @@ interface SearchBarProps {
   value?: string;
 }
 
-export function SearchBar({ onSubmit, className = "", value = "" }: SearchBarProps) {
+export function SearchBar({
+  onSubmit,
+  className = "",
+  value = "",
+}: SearchBarProps) {
   const [searchValue, setSearchValue] = React.useState(value);
   const [isSemanticSearch, setIsSemanticSearch] = React.useState(true);
 
@@ -21,21 +25,24 @@ export function SearchBar({ onSubmit, className = "", value = "" }: SearchBarPro
   };
 
   return (
-    <form onSubmit={handleSubmit} className={`flex items-center space-x-2 ${className}`}>
+    <form
+      onSubmit={handleSubmit}
+      className={`flex items-center space-x-2 ${className}`}
+    >
       <Input
         placeholder="Search..."
         value={searchValue}
         onChange={(event) => setSearchValue(event.target.value)}
         className="max-w-sm"
       />
-      <div className="flex items-center space-x-2">
+      {/* <div className="flex items-center space-x-2">
         <Switch
           id="semantic-search"
           checked={isSemanticSearch}
           onCheckedChange={setIsSemanticSearch}
         />
         <Label htmlFor="semantic-search">Semantic Search</Label>
-      </div>
+      </div> */}
       <button type="submit" hidden />
     </form>
   );

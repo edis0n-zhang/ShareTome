@@ -3,16 +3,19 @@
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Icons } from "../../components/icons";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState<"google" | "github" | null>(null);
 
   const handleOAuthSignIn = async (provider: "github" | "google") => {
     try {
-      await signIn(provider, { callbackUrl: "/" });
+      setIsLoading(provider);
+      await signIn(provider, { callbackUrl: "/dashboard" });
     } catch (error) {
       console.error("OAuth sign in error:", error);
     }
@@ -37,6 +40,7 @@ export default function LoginPage() {
                   <Button
                     variant="outline"
                     onClick={() => handleOAuthSignIn("github")}
+                    disabled={isLoading !== null}
                   >
                     <Icons.gitHub className="mr-2 h-4 w-4" />
                     Continue with GitHub
@@ -44,6 +48,7 @@ export default function LoginPage() {
                   <Button
                     variant="outline"
                     onClick={() => handleOAuthSignIn("google")}
+                    disabled={isLoading !== null}
                   >
                     <Icons.google className="mr-2 h-4 w-4" />
                     Continue with Google

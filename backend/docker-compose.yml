@@ -16,6 +16,12 @@ services:
       BLUEPRINT_DB_USERNAME: ${BLUEPRINT_DB_USERNAME}
       BLUEPRINT_DB_PASSWORD: ${BLUEPRINT_DB_PASSWORD}
       BLUEPRINT_DB_SCHEMA: ${BLUEPRINT_DB_SCHEMA}
+      ELASTICSEARCH_URL: ${ELASTICSEARCH_URL}
+      ELASTICSEARCH_INDEX: ${ELASTICSEARCH_INDEX}
+      ELASTICSEARCH_API_KEY: ${ELASTICSEARCH_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ARYN_API_KEY: ${ARYN_API_KEY}
     depends_on:
       psql_bp:
         condition: service_healthy
@@ -45,3 +51,4 @@ volumes:
   psql_volume_bp:
 networks:
   blueprint:
+    driver: bridge

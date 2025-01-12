@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -22,10 +23,28 @@ type Service interface {
 	// Close terminates the database connection.
 	// It returns an error if the connection cannot be closed.
 	Close() error
+
+	// CreateUserTable inserts a new record into the user_tables table
+	CreateUserTable(ctx context.Context, userID, tableName string, isPublic bool) (string, error)
+
+	// GetUserTables retrieves all tables for a given user
+	GetUserTables(ctx context.Context, userID string) ([]UserTable, error)
+
+	// TableExists checks if a table with the given name already exists for the user
+	TableExists(ctx context.Context, userID, tableName string) (bool, error)
+
+	// GetTableByID retrieves a table by its ID
+	GetTableByID(ctx context.Context, tableID string) (*UserTable, error)
 }
 
 type service struct {
 	db *sql.DB
+}
+
+type UserTable struct {
+	TableID   string `json:"table_id"`
+	TableName string `json:"table_name"`
+	IsPublic  bool   `json:"is_public"`
 }
 
 var (
@@ -112,4 +131,90 @@ func (s *service) Health() map[string]string {
 func (s *service) Close() error {
 	log.Printf("Disconnected from database: %s", database)
 	return s.db.Close()
+}
+
+// CreateUserTable inserts a new record into the user_tables table
+func (s *service) CreateUserTable(ctx context.Context, userID, tableName string, isPublic bool) (string, error) {
+	fmt.Println("dbcreate 1")
+	tableID := uuid.New().String()
+	
+	query := `
+		INSERT INTO user_tables (user_id, table_id, table_name, public)
+		VALUES ($1, $2, $3, $4)
+		RETURNING table_id`
+	
+	var returnedTableID string
+	err := s.db.QueryRowContext(ctx, query, userID, tableID, tableName, isPublic).Scan(&returnedTableID)
+	if err != nil {
+		return "", fmt.Errorf("failed to create user table: %v", err)
+	}
+	
+	return returnedTableID, nil
+}
+
+// GetUserTables retrieves all tables for a given user from the database
+func (s *service) GetUserTables(ctx context.Context, userID string) ([]UserTable, error) {
+	query := `
+		SELECT table_id, table_name, public
+		FROM user_tables
+		WHERE user_id = $1
+		ORDER BY table_name`
+
+	rows, err := s.db.QueryContext(ctx, query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query user tables: %v", err)
+	}
+	defer rows.Close()
+
+	var tables []UserTable
+	for rows.Next() {
+		var table UserTable
+		if err := rows.Scan(&table.TableID, &table.TableName, &table.IsPublic); err != nil {
+			return nil, fmt.Errorf("failed to scan user table row: %v", err)
+		}
+		tables = append(tables, table)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating user table rows: %v", err)
+	}
+
+	return tables, nil
+}
+
+// TableExists checks if a table with the given name already exists for the user
+func (s *service) TableExists(ctx context.Context, userID, tableName string) (bool, error) {
+	query := `
+		SELECT EXISTS (
+			SELECT 1 FROM user_tables 
+			WHERE user_id = $1 AND table_name = $2
+		)`
+	
+	var exists bool
+	err := s.db.QueryRowContext(ctx, query, userID, tableName).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("failed to check table existence: %v", err)
+	}
+	
+	return exists, nil
+}
+
+// GetTableByID retrieves a table by its ID from the database
+func (s *service) GetTableByID(ctx context.Context, tableID string) (*UserTable, error) {
+	query := `
+		SELECT table_id, table_name
+		FROM user_tables
+		WHERE table_id = $1
+	`
+
+	var table UserTable
+	err := s.db.QueryRowContext(ctx, query, tableID).Scan(&table.TableID, &table.TableName)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("error getting table by ID: %v", err)
+	}
+
+	return &table, nil
 }

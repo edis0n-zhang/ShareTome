@@ -1,0 +1,8 @@
+pyarrow
+sycamore-ai
+elasticsearch
+python-dotenv
+openai>=1.6.0  # Required for OpenAITokenizer and OpenAIEmbedder
+sycamore-ai[elasticsearch]
+sycamore-ai[local-inference]
+opencv-python-headless
