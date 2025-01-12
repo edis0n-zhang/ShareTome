@@ -16,6 +16,6 @@ export default withAuth(
 export const config = {
   matcher: [
     "/api/:path*", // Protect all API routes
-    "/((?!api/auth|login|auth/error).*)",  // Protect all routes except auth-related ones
+    "/((?!api/auth|login|auth/error|$).*)", // Protect all routes except auth-related ones and root
   ],
 };
