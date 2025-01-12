@@ -8,6 +8,14 @@ import { api } from "../../../lib/api";
 import { SearchBar } from "../../../components/search-bar";
 import { Sidebar } from "../../../components/sidebar";
 import { Header } from "../../../components/header";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "../../../components/ui/dialog";
+import { Checkbox } from "../../../components/ui/checkbox";
+import { Input } from "../../../components/ui/input";
 
 const columns = [
   {
@@ -45,6 +53,8 @@ export default function TablePage({ params }: { params: { slug: string } }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [tableName, setTableName] = useState<string>("");
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
 
   const fetchDocuments = async (query?: string) => {
     try {
@@ -94,6 +104,21 @@ export default function TablePage({ params }: { params: { slug: string } }) {
     }
   };
 
+  const handleShare = async (makePublic: boolean) => {
+    try {
+      await api.updateTableVisibility(params.slug, makePublic);
+      console.log("setting public");
+      setIsPublic(makePublic);
+    } catch (error) {
+      console.error("Error updating table visibility:", error);
+    }
+  };
+
+  const copyToClipboard = () => {
+    const shareUrl = `${window.location.origin}/share/${params.slug}`;
+    navigator.clipboard.writeText(shareUrl);
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -119,9 +144,7 @@ export default function TablePage({ params }: { params: { slug: string } }) {
                 </Button>
                 <Button
                   variant="secondary"
-                  onClick={() =>
-                    window.navigator.clipboard.writeText(JSON.stringify(data))
-                  }
+                  onClick={() => setIsShareDialogOpen(true)}
                 >
                   Share Table
                 </Button>
@@ -150,12 +173,67 @@ export default function TablePage({ params }: { params: { slug: string } }) {
               </div>
             )}
 
-            <AddDataForm
-              isOpen={isAddDataFormOpen}
-              onClose={() => setIsAddDataFormOpen(false)}
-              onFilesAccepted={handleAddData}
-              tableName={tableName}
-            />
+            {isAddDataFormOpen && (
+              <AddDataForm
+                onSubmit={handleAddData}
+                onClose={() => setIsAddDataFormOpen(false)}
+              />
+            )}
+
+            <Dialog
+              open={isShareDialogOpen}
+              onOpenChange={setIsShareDialogOpen}
+            >
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Share Table</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm text-gray-600">Share Link</label>
+                    <div className="flex space-x-2">
+                      <Input
+                        readOnly
+                        value={`${window.location.origin}/share/${params.slug}`}
+                        className="bg-gray-850 font-mono text-sm"
+                      />
+                      <Button
+                        variant="outline"
+                        onClick={copyToClipboard}
+                        className="whitespace-nowrap"
+                      >
+                        Copy Link
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex justify-between mt-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="public"
+                        checked={isPublic}
+                        onCheckedChange={(checked) => {
+                          setIsPublic(!!checked);
+                        }}
+                      />
+                      <label
+                        htmlFor="public"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Make table public
+                      </label>
+                    </div>
+                    <Button
+                      onClick={() => {
+                        handleShare(isPublic);
+                        setIsShareDialogOpen(false);
+                      }}
+                    >
+                      Submit
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>

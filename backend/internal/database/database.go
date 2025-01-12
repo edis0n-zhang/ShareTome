@@ -35,6 +35,9 @@ type Service interface {
 
 	// GetTableByID retrieves a table by its ID
 	GetTableByID(ctx context.Context, tableID string) (*UserTable, error)
+
+	// UpdateTableVisibility updates the visibility of a table
+	UpdateTableVisibility(ctx context.Context, tableID string, isPublic bool) error
 }
 
 type service struct {
@@ -44,7 +47,7 @@ type service struct {
 type UserTable struct {
 	TableID   string `json:"table_id"`
 	TableName string `json:"table_name"`
-	IsPublic  bool   `json:"is_public"`
+	IsPublic  bool   `json:"public"`
 }
 
 var (
@@ -202,13 +205,13 @@ func (s *service) TableExists(ctx context.Context, userID, tableName string) (bo
 // GetTableByID retrieves a table by its ID from the database
 func (s *service) GetTableByID(ctx context.Context, tableID string) (*UserTable, error) {
 	query := `
-		SELECT table_id, table_name
+		SELECT table_id, table_name, public
 		FROM user_tables
 		WHERE table_id = $1
 	`
 
 	var table UserTable
-	err := s.db.QueryRowContext(ctx, query, tableID).Scan(&table.TableID, &table.TableName)
+	err := s.db.QueryRowContext(ctx, query, tableID).Scan(&table.TableID, &table.TableName, &table.IsPublic)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -217,4 +220,24 @@ func (s *service) GetTableByID(ctx context.Context, tableID string) (*UserTable,
 	}
 
 	return &table, nil
+}
+
+// UpdateTableVisibility updates the visibility of a table in the database
+func (s *service) UpdateTableVisibility(ctx context.Context, tableID string, isPublic bool) error {
+	query := `UPDATE user_tables SET public = $1 WHERE table_id = $2`
+	result, err := s.db.ExecContext(ctx, query, isPublic, tableID)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("table not found")
+	}
+
+	return nil
 }

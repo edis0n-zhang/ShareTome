@@ -26,6 +26,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	mux.HandleFunc("/tables", s.getUserTablesHandler)
 	mux.HandleFunc("/upload", s.uploadHandler) // Add upload endpoint
 	mux.HandleFunc("/table", s.getTableByIDHandler) // Add get table by ID endpoint
+	mux.HandleFunc("/table/", s.updateTableVisibilityHandler) // Add update table visibility endpoint
 
 	// Wrap the mux with CORS middleware
 	return s.corsMiddleware(mux)
@@ -538,6 +539,47 @@ func (s *Server) getTableByIDHandler(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(table); err != nil {
 		log.Printf("Error encoding response: %v", err)
 	}
+}
+
+type updateTableVisibilityRequest struct {
+	IsPublic bool `json:"is_public"`
+}
+
+func (s *Server) updateTableVisibilityHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPatch {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Extract table ID from URL path
+	pathParts := strings.Split(r.URL.Path, "/")
+	if len(pathParts) != 4 || pathParts[3] != "visibility" {
+		http.Error(w, "Invalid path", http.StatusBadRequest)
+		return
+	}
+	tableID := pathParts[2]
+
+	// Parse request body
+	var req updateTableVisibilityRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Update table visibility in database
+	ctx := r.Context()
+	err := s.db.UpdateTableVisibility(ctx, tableID, req.IsPublic)
+	if err != nil {
+		if err.Error() == "table not found" {
+			http.Error(w, "Table not found", http.StatusNotFound)
+			return
+		}
+		log.Printf("Error updating table visibility: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func mustToJSON(data interface{}) string {

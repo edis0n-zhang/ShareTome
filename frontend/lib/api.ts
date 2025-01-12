@@ -95,4 +95,33 @@ export const api = {
       throw error;
     }
   },
+
+  updateTableVisibility: async (
+    tableId: string,
+    makePublic: boolean
+  ): Promise<void> => {
+    try {
+      const session = await getSession();
+      if (!session?.user) {
+        throw new Error("Not authenticated");
+      }
+
+      const response = await fetch(`${API_BASE_URL}/table/${tableId}/visibility`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.user.email}`,
+        },
+        body: JSON.stringify({ is_public: makePublic }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText);
+      }
+    } catch (error) {
+      console.error("Error updating table visibility:", error);
+      throw error;
+    }
+  },
 };
