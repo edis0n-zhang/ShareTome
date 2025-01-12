@@ -146,7 +146,6 @@ export default function SharePage({ params }: { params: { slug: string } }) {
         </div>
       ) : (
         <>
-          <Sidebar />
           <div className="flex-1 overflow-auto">
             <div className="container mx-auto p-6">
               <div className="flex justify-between items-center mb-4">

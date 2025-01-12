@@ -31,6 +31,25 @@ export async function fetchWithAuth(
   return response.json();
 }
 
+export async function fetchPublicTable(endpoint: string, options: RequestInit = {}) {
+  const headers = {
+    "Content-Type": "application/json",
+    ...options.headers,
+  };
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(error || response.statusText);
+  }
+
+  return response.json();
+}
+
 interface DocumentResponse {
   _source: {
     properties: {
@@ -53,7 +72,12 @@ export const api = {
   },
 
   getTableByID: async (tableId: string): Promise<UserTable> => {
-    return fetchWithAuth(`/table?table_id=${tableId}`);
+    try {
+      return await fetchWithAuth(`/table?table_id=${tableId}`);
+    } catch (error) {
+      // If authentication fails, try fetching as public table
+      return await fetchPublicTable(`/table?table_id=${tableId}`);
+    }
   },
 
   createUserTable: async (
@@ -61,7 +85,7 @@ export const api = {
     isPublic: boolean = false,
     skipTableCreation: boolean = false
   ) => {
-    return fetchWithAuth("/create_table", {
+    return fetch("/create_table", {
       method: "POST",
       body: JSON.stringify({
         table_name: tableName,
@@ -72,7 +96,12 @@ export const api = {
   },
 
   getAllDocuments: async (tableId: string) => {
-    return fetchWithAuth(`/es/all?table_id=${tableId}`);
+    try {
+      return await fetchWithAuth(`/es/all?table_id=${tableId}`);
+    } catch (error) {
+      // If authentication fails, try fetching as public table
+      return await fetchPublicTable(`/es/all?table_id=${tableId}`);
+    }
   },
 
   searchDocuments: async (query: string, tableId: string) => {
@@ -87,12 +116,10 @@ export const api = {
     )}&table_id=${encodeURIComponent(tableId)}`;
     console.log("Final search URL:", url);
     try {
-      const response = await fetchWithAuth(url);
-      console.log("Search response:", response);
-      return response;
+      return await fetchWithAuth(url);
     } catch (error) {
-      console.error("Search request failed:", error);
-      throw error;
+      // If authentication fails, try fetching as public table
+      return await fetchPublicTable(url);
     }
   },
 
@@ -106,14 +133,17 @@ export const api = {
         throw new Error("Not authenticated");
       }
 
-      const response = await fetch(`${API_BASE_URL}/table/${tableId}/visibility`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.user.email}`,
-        },
-        body: JSON.stringify({ is_public: makePublic }),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/table/${tableId}/visibility`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.user.email}`,
+          },
+          body: JSON.stringify({ is_public: makePublic }),
+        }
+      );
 
       if (!response.ok) {
         const errorText = await response.text();

@@ -89,18 +89,6 @@ func (s *Server) getAllDocumentsHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	authToken := r.Header.Get("Authorization")
-	log.Printf("getAllDocumentsHandler: Received Authorization header: %s", authToken)
-	userID := ""
-	if strings.HasPrefix(authToken, "Bearer ") {
-		userID = strings.TrimPrefix(authToken, "Bearer ")
-	}
-	if userID == "" {
-		log.Printf("getAllDocumentsHandler: Invalid or missing Authorization header from %s", r.RemoteAddr)
-		http.Error(w, "Invalid or missing Authorization header", http.StatusUnauthorized)
-		return
-	}
-
 	indexName := os.Getenv("ELASTICSEARCH_INDEX")
 	if indexName == "" {
 		http.Error(w, "Elasticsearch index not configured", http.StatusInternalServerError)
@@ -115,11 +103,6 @@ func (s *Server) getAllDocumentsHandler(w http.ResponseWriter, r *http.Request) 
 					{
 						"match": map[string]interface{}{
 							"properties.properties.table_id": tableID,
-						},
-					},
-					{
-						"match": map[string]interface{}{
-							"properties.properties.user_id": userID,
 						},
 					},
 				},
@@ -182,18 +165,6 @@ func (s *Server) searchDocumentsHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	authToken := r.Header.Get("Authorization")
-	log.Printf("uploadHandler: Received Authorization header: %s", authToken)
-	userID := ""
-	if strings.HasPrefix(authToken, "Bearer ") {
-		userID = strings.TrimPrefix(authToken, "Bearer ")
-	}
-	if userID == "" {
-		log.Printf("uploadHandler: Invalid or missing Authorization header from %s", r.RemoteAddr)
-		http.Error(w, "Invalid or missing Authorization header", http.StatusUnauthorized)
-		return
-	}
-
 	// embed query using text-embedding-3-small
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
@@ -229,11 +200,6 @@ func (s *Server) searchDocumentsHandler(w http.ResponseWriter, r *http.Request) 
 					{
 						"match": map[string]interface{}{
 							"properties.properties.table_id": tableID,
-						},
-					},
-					{
-						"match": map[string]interface{}{
-							"properties.properties.user_id": userID,
 						},
 					},
 				},

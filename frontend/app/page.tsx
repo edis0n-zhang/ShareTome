@@ -42,13 +42,6 @@ export default function Home() {
         <section className="w-full">
           <div className="container mx-auto px-4 flex items-center justify-center min-h-[calc(100vh-8rem)]">
             <div className="w-full flex flex-col items-center space-y-8 text-center max-w-3xl">
-              {elasticData && (
-                <div className="text-xl font-semibold text-blue-600">
-                  <pre className="text-left text-sm overflow-auto max-h-[400px] p-4 bg-gray-100 rounded">
-                    {JSON.stringify(elasticData, null, 2)}
-                  </pre>
-                </div>
-              )}
               <div className="space-y-4">
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
                   Welcome to ShareTome
